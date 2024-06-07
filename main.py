@@ -9,16 +9,98 @@ import re
 import datetime
 import sys
 
-logging.basicConfig(level=logging.INFO)
+from dataclasses import dataclass
+
+
+@dataclass
+class List_item:
+    url: str
+    unit_price: str
+    description: str
+
+
+class MyBot:
+    def __init__(self, user_id):
+        self.user_id = user_id
+        self.item_list = list[List_item]
+        self.url_list = []
+
+
+    def get_urls(self):
+        command = ['curl', f'https://www.kleinanzeigen.de/s-bestandsliste.html?userId={self.user_id}']
+        result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode == 0:
+            soup = BeautifulSoup(result.stdout, 'html.parser')
+            return soup.find_all('a', class_='ellipsis')
+
+    def get_item_page(self, url) -> str:
+        command = ['curl', url]
+        result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode == 0:
+            return result.stdout
+
+    def update_items(self):
+        for url in self.urls:
+            page = self.get_item_page(url)
+            item = List_item(url, self._get_description(page), self._get_price(page))
+            self.item_list.append(item)
+
+
+
+    @staticmethod
+    def _get_description(text):
+        soup = BeautifulSoup(text, 'html.parser')
+        element = soup.find(id='viewad-description-text')
+        if element:
+            description = element.get_text(separator='\n')
+            description = re.sub('\n', '', description).strip()
+            return description
+        return "No description found"
+
+    @staticmethod
+    def _get_price(text):
+        soup = BeautifulSoup(text, 'html.parser')
+        element = soup.find(class_="aditem-main--middle--price-shipping--price")
+        if element:
+            price = element.get_text(separator='')
+            price = re.sub('\n', '', price).strip()
+            return price
+        return "no price"
+
+    @staticmethod
+    def _get_anzeige(url):
+        command = ['curl', url]
+        result = subprocess.run(command, capture_output=True, text=True)
+        text = result.stdout.encode('utf-8')
+        return text
+
+
 
 class KBot:
-    def __init__(self, id):
+    def __init__(self, id_list: list[int]):
         if not os.path.exists('files'):
             os.mkdir('files')
-        self.id = id
-        self.filename = os.path.join('files', ('result-' + str(self.id)))
-        self.old_result_list = []
-        self.result_list = []
+        self.id_list = id_list
+        self.gesamt_liste = list[AnzeigenVonBenutzer]
+        self.get_items(id_list)
+        _timestamp = datetime.datetime.strftime("%Y-%m-%d-%H:%M:%S")
+        self.result_file = os.path.join('files', ('result-' + _timestamp))
+        self.state_file = os.path.join('files', 'state')
+
+    def get_items(self, id_list):
+        for _ in id_list:
+            self.gesamt_liste.append(get_anzeigen_von_benutzer(id))
+
+
+
+    def write_items_to_file(self, id_list):
+        with open(self.result_file, 'w') as f:
+            for _ in self.gesamt_liste:
+                f.write(_)
+
+
+
+
 
     def get_items_and_compare_to_current_result(self):
         try:
@@ -37,7 +119,6 @@ class KBot:
         else:
             logging.info(f'No difference; not writing to file')
 
-
     def _update_result_list(self, id: int):
         """
         :param id:
@@ -47,8 +128,7 @@ class KBot:
         command = ['curl', f'https://www.kleinanzeigen.de/s-bestandsliste.html?userId={id}']
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode == 0:
-            raw_html = result.stdout
-            soup = BeautifulSoup(raw_html, 'html.parser')
+            soup = BeautifulSoup(result.stdout, 'html.parser')
             url_list = (soup.find_all('a', class_='ellipsis'))
             logging.info(f'Found {len(url_list)} results')
             result_list = []
@@ -88,8 +168,7 @@ class KBot:
         text = result.stdout.encode('utf-8')
         return text
 
-
-    def compare_result_lists(self, result_list_old:list, result_list_new:list):
+    def compare_result_lists(self, result_list_old: list, result_list_new: list):
         diffs = {}
 
         for item1 in result_list_old:
@@ -114,7 +193,6 @@ class KBot:
                 diffs[item2] = "Not Found"
 
         return diffs
-
 
     def _write_to_file(self, object):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
