@@ -5,13 +5,11 @@ import logging
 import os.path
 from bs4 import BeautifulSoup
 import subprocess
-import pprint
 import re
 import datetime
 import sys
 
 logging.basicConfig(level=logging.INFO)
-
 
 class KBot:
     def __init__(self, id):
@@ -133,6 +131,4 @@ ID = 19918217
 
 if __name__ == "__main__":
     user_id = int(sys.argv[1])
-    bot = KBot(user_id).get_items_and_compare_to_current_result()
-    #print(f"printing result list for user {user_id}:")
-    #bot.print_result_list()
+    KBot(user_id).get_items_and_compare_to_current_result()
