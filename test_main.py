@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 
+
 def setUpModule():
     """Called once before module"""
     print("doing setUpModule...")
@@ -29,7 +30,6 @@ class Test01(unittest.TestCase):
         print("doing tearDownClass ...")
 
 
-
     def test_01(self):
         mock_url_list = []
         mock_item_list = []
@@ -38,23 +38,50 @@ class Test01(unittest.TestCase):
             mock_item_list.append(main.ListItem(mock_url_list[i], f'price{i}', f'description{i}'))
         mock_user_stuff = main.UserStuff(123, mock_item_list)
 
-        @patch('main.MyBot.create_url_list', return_value=mock_url_list)
-        @patch('main.MyBot.create_user_stuff', return_value=mock_user_stuff)
-        def d(m, n):
+        @patch('main.MyBot.create_url_list', return_value=mock_url_list) #first patch
+        @patch('main.MyBot.create_user_stuff', return_value=mock_user_stuff) #second patch
+        def d(second_patch, first_patch):
 
-            #assert n is main.MyBot.create_url_list
-            #assert m is main.MyBot.create_user_stuff
+            assert first_patch is main.MyBot.create_url_list
+            assert second_patch is main.MyBot.create_user_stuff_object
             #print(main.MyBot.create_url_list())
 
             bot = main.MyBot(1234)
             print(bot.create_url_list())
-            print(bot.create_user_stuff())
+            print(bot.create_user_stuff_object())
 
         d()
 
 
-    def test_02(self):
-        pass
+    def test_02_items_changed(self):
+        mock_url_list = []
+        mock_item_list = []
+        for i in range(3):
+            mock_url_list.append(f'url{i}')
+            mock_item_list.append(main.ListItem(mock_url_list[i], f'price{i}', f'description{i}'))
+        mock_user_stuff = main.UserStuff(123, mock_item_list)
+
+
+        mock_item_list_2 = []
+        for i in range(3):
+            mock_url_list.append(f'url{i}')
+            mock_item_list_2.append(main.ListItem(mock_url_list[i], f'price{i}', f'description_changed{i}'))
+        mock_user_stuff_2 = main.UserStuff(123, mock_item_list_2)
+
+
+        @patch('main.MyBot.create_url_list', return_value=mock_url_list)  # first patch
+        @patch('main.MyBot.create_user_stuff', return_value=mock_user_stuff)  # second patch
+        def e(second_patch, first_patch):
+            assert first_patch is main.MyBot.create_url_list
+            assert second_patch is main.MyBot.create_user_stuff_object
+
+            #self.assertTrue(mock_user_stuff != mock_user_stuff_2)
+            print("check 1")
+            self.assertTrue(mock_user_stuff != mock_user_stuff_2)
+
+        e()
+
+
 
 
 if __name__ == '__main__':

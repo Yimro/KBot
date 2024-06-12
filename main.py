@@ -51,7 +51,7 @@ class MyBot:
         if result.returncode == 0:
             return result.stdout
 
-    def create_user_stuff(self) -> UserStuff:
+    def create_user_stuff_object(self) -> UserStuff:
         stuff = UserStuff(self.user_id, [])
         for ad_url in self.urls:
             ad_page = self._get_ad(ad_url)
@@ -98,6 +98,6 @@ if __name__ == "__main__":
     user_id = int(sys.argv[1])
     bot = MyBot(user_id)
     print(bot.create_url_list())
-    bot.create_user_stuff()
+    bot.create_user_stuff_object()
     print(f"printing user_stuff_items for user {user_id}:")
     bot.print_user_stuff_items()
