@@ -90,10 +90,6 @@ class MyBot:
         return "No price found"
 
 
-IDK = 110484591
-IDX = 9245418
-ID = 19918217
-
 if __name__ == "__main__":
     user_id = int(sys.argv[1])
     bot = MyBot(user_id)
