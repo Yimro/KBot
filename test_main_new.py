@@ -1,6 +1,9 @@
 import logging
 import unittest
-import main
+
+import pytest
+
+import bot as main
 from unittest.mock import patch, MagicMock
 import copy
 
@@ -79,7 +82,8 @@ class TKBot(unittest.TestCase):
         result = main.MyBot._get_ad('url')
         self.assertEqual(result, 'ad_page')
 
-    @patch('bs4.BeautifulSoup')
+
+    @patch('main.BeautifulSoup')
     def test_get_description(self, mock_soup):
         mock_soup.return_value.find.return_value = None
 
@@ -87,6 +91,27 @@ class TKBot(unittest.TestCase):
 
         result = bot._get_description('text')
         self.assertEqual(result, 'No description found')
+
+    @patch('main.BeautifulSoup')
+    def test_get_price(self, mock_soup):
+
+        mock_soup.return_value.find.return_value = None
+
+        result = main.MyBot._get_price('text')
+        self.assertEqual(result, 'No price found')
+
+    @patch('main.BeautifulSoup')
+    def test_get_price_2(self, mock_soup):
+
+        mock_element = MagicMock()
+        mock_element.get_text.return_value = '200'
+
+        mock_soup.return_value.find.return_value = mock_element
+
+        price = main.MyBot._get_price('dummy text')
+
+        self.assertEqual(price, "200")
+
 
     def test_find_changes(self):
         # Create two UserStuff objects with the same stuff_list
