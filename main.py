@@ -142,12 +142,12 @@ class MyBot:
 
 
 if __name__ == "__main__":
-    user_id = int(sys.argv[1])
-    print("creating bot with user_id:", user_id)
-    bot = MyBot(user_id) # user_id = 1234,
+    user = int(sys.argv[1])
+    print("creating bot with user_id:", user)
+    bot = MyBot(user) # user_id = 1234,
     print("check if user_stuff_old exists ...")
 
-    bot.user_stuff_old = load_user_stuff_from_file(f'user_stuff_{user_id}.pkl')
+    bot.user_stuff_old = load_user_stuff_from_file(f'user_stuff_{user}.pkl')
     if bot.user_stuff_old:
         print("User_stuff_old found, now creating user_stuff_new ...")
         bot.user_stuff_new = bot.create_user_stuff_object()

@@ -7,16 +7,18 @@ import copy
 if not logging.getLogger().hasHandlers():
     logging.basicConfig(level=logging.DEBUG)
 
+global mock_url_list, mock_item_list, mock_user_stuff_old, mock_user_stuff_new
 
 def setUpModule():
     """Called once before module"""
     print("setUpModule: creating mock objects")
     global mock_url_list, mock_item_list, mock_user_stuff_old, mock_user_stuff_new
     mock_url_list = [f'url{i}' for i in range(3)]
-    mock_item_list = [main.ListItem(mock_url_list[i], f'title{i}', f'description{i}',  f'price{i}') for i in range(3)]
+    mock_item_list = [main.ListItem(mock_url_list[i], f'title{i}', f'description{i}', f'price{i}') for i in range(3)]
     mock_user_stuff_old = main.UserStuff(123, mock_item_list)
     mock_user_stuff_new = copy.deepcopy(mock_user_stuff_old)
     mock_user_stuff_new.stuff_list[0].description = 'description_changed0'
+
 
 def tearDownModule():
     """Called once after module"""
@@ -26,6 +28,7 @@ def tearDownModule():
 def test_case_01():
     assert 'python'.upper() == 'PYTHON'
 
+
 class TKBot(unittest.TestCase):
 
     @patch('main.MyBot._create_url_list')
@@ -34,7 +37,8 @@ class TKBot(unittest.TestCase):
     @patch('main.MyBot._get_description')
     @patch('main.MyBot._get_price')
     @patch('main.load_user_stuff_from_file')
-    def test_create_user_stuff_object(self, mock_load_user_stuff, mock_get_price, mock_get_description, mock_get_title, mock_get_ad, mock_create_url_list):
+    def test_create_user_stuff_object(self, mock_load_user_stuff, mock_get_price, mock_get_description, mock_get_title,
+                                      mock_get_ad, mock_create_url_list):
         # Mock the methods
         mock_create_url_list.return_value = ['url0', 'url1', 'url2']
         mock_get_ad.return_value = 'ad_page'
@@ -42,7 +46,6 @@ class TKBot(unittest.TestCase):
         mock_get_description.return_value = 'description'
         mock_get_price.return_value = 'price'
         mock_load_user_stuff.return_value = None
-
 
         # Create a MyBot object
         bot = main.MyBot(123)
@@ -55,10 +58,11 @@ class TKBot(unittest.TestCase):
         self.assertEqual(user_stuff.user_id, 123)
         self.assertEqual(len(user_stuff.stuff_list), 3)
         for item in user_stuff.stuff_list:
-            #self.assertEqual(item.url, 'url0')
+            # self.assertEqual(item.url, 'url0')
             self.assertEqual(item.title, 'title')
             self.assertEqual(item.description, 'description')
             self.assertEqual(item.price, 'price')
+
     @patch('subprocess.run')
     def test_get_ad(self, mock_run):
         # Mock the subprocess.run method
@@ -83,10 +87,6 @@ class TKBot(unittest.TestCase):
 
         result = bot._get_description('text')
         self.assertEqual(result, 'No description found')
-
-        #mock_soup.assert_called()
-
-
 
     def test_find_changes(self):
         # Create two UserStuff objects with the same stuff_list
