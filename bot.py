@@ -10,7 +10,7 @@ import sys
 import pickle
 import pprint
 import send_email as send_email
-
+import email_data as email_data
 from dataclasses import dataclass
 
 
@@ -113,7 +113,6 @@ class MyBot:
         return stuff
 
     def print_user_stuff_items(self, user_stuff_obj: UserStuff) -> None:
-        print(f'User ID: {self.user_id}')
         for item in user_stuff_obj.stuff_list:
             print("---")
             print(item.url, item.title, item.price, item.description[0:20], sep='\n')
@@ -170,7 +169,7 @@ def check_for_changes():
         print(f'Saved user stuff found. Last modified at: {datetime.datetime.fromtimestamp(time_modified)}')
         print(f'User id: {saved_user_stuff.user_id}; Number of Items: {len(saved_user_stuff.stuff_list)}')
         print(f'Creating new user stuff object for user {user}...')
-        new_user_stuff = MyBot(user).create_user_stuff_object()
+        new_user_stuff: UserStuff = MyBot(user).create_user_stuff_object()
 
         ### for testing purposes, create a new user_stuff object ###
         # new_user_stuff = copy.deepcopy(user_stuff)
@@ -183,10 +182,26 @@ def check_for_changes():
             print(f"User stuff for {user} has changed, saving new user_stuff object.")
             save_user_stuff_to_file(new_user_stuff, filename)
             print_changes_with_color(saved_user_stuff.find_changes(new_user_stuff))
-            send_email()
+            # Todo create email body in html format in other python file maybe
+            body = str(new_user_stuff.user_id) + '\n' + new_user_stuff.stuff_list[0].title + '\n'
+
+            send_email.send_email(
+                subject='changes detected for user' + str(user),
+                body=body,
+                from_email="kbot@kbot.com",
+                to_email=email_data.data.to_email,
+                connection_data=email_data.data.get_connection_data())
 
         else:
             print("Nothing has changed, nothing to do!")
+            # Todo create email body in html format in other python file maybe
+            body = str(new_user_stuff.user_id) + '<br>' + new_user_stuff.stuff_list[0].title + '<br>'
+            send_email.send_email(
+                subject='Nothing changed for user ' + str(user),
+                body=body,
+                from_email="kbot@kbot.com",
+                to_email=email_data.data.to_email,
+                connection_data=email_data.data)
 
     else:
         print(f"No saved user stuff found, creating new user_stuff object for {user}")
@@ -232,3 +247,6 @@ if __name__ == "__main__":
         sys.exit(1)
 
     check_for_changes()
+
+# Todo expand testing with local html files to test with
+# Todo expand testing with local data, not only with mock data

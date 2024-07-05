@@ -66,6 +66,9 @@ class TKBot(unittest.TestCase):
             self.assertEqual(item.description, 'description')
             self.assertEqual(item.price, 'price')
 
+    @patch('main.BeautifulSoup')
+    def test_create_user_stuff_object_from_file(self, mock_):
+        pass
     @patch('subprocess.run')
     def test_get_ad(self, mock_run):
         # Mock the subprocess.run method
