@@ -222,11 +222,7 @@ def check_for_changes():
             #print(f'!!!Changes!!!: {_changes}')
             save_user_stuff_to_file(new_user_stuff, filename)
             print_changes_with_color(saved_user_stuff.find_changes(new_user_stuff))
-            # Todo create email body in html format in other python file maybe
 
-            body = '==========OLD:==========\n' + str(saved_user_stuff) + '==========NEW:==========\n' + str(
-                new_user_stuff)
-            body += f'==========CHANGES:==========\nChanges: {_changes}'
             body = create_changes_html(saved_user_stuff.find_changes(new_user_stuff))
             print(f"Sending email to {email_data.data.to_email}")
             send_email.send_email(
