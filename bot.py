@@ -33,6 +33,12 @@ class ListItem:
 
         return changes if changes else None
 
+    def __str__(self):
+        return f'Url: {self.url}; Title: {self.title}; Price: {self.price}; Description: {self.description}\n\n'
+
+    def pretty(self):
+        return f'Url: {self.url}\nTitle: {self.title}\nPrice: {self.price}\nDescription: {self.description}\n\n'
+
 
 @dataclass
 class UserStuff:
@@ -50,14 +56,22 @@ class UserStuff:
             return None
 
         changes = []
-        for item_self, item_other in zip(self.stuff_list, other.stuff_list):
-            item_changes = item_self.find_changes(item_other)
+        for list_item_current, list_item_new in zip(self.stuff_list, other.stuff_list):
+            item_changes = list_item_current.find_changes(list_item_new)
             if item_changes:
-                changes.append((item_self, item_other, item_changes))
+                changes.append((list_item_new.url, item_changes))
 
         return changes if changes else None
 
-
+    def __str__(self):
+        items_str = ''
+        for item in self.stuff_list:
+            items_str += item.pretty()
+        return f'''User id: {self.user_id}; Number of Items: {len(self.stuff_list)} \n
+Items:\n
+------ \n 
+{items_str}
+'''
 
 
 def save_user_stuff_to_file(user_stuff: UserStuff, file_name: str) -> None:
@@ -74,11 +88,33 @@ def load_user_stuff_from_file(file_name: str):
 
 
 def print_changes_with_color(changes):
-    for old_item, new_item, attrs_changes in changes:
-        if old_item.url != new_item.url:
-            print(f"Changes for item from {old_item.url} to {new_item.url}:")
+    for url, attrs_changes in changes:
+        if url != url:
+            print(f"NEW URL!: {url}:")
         else:
-            print(f"Changes for item {old_item.url}:")
+            print(f"Changes for item {url}:")
+        for attr, value in attrs_changes.items():
+            print(f"\t{attr}: \033[91m{value[0]}\033[0m -> \033[92m{value[1]}\033[0m")
+
+
+def create_changes_html(changes):
+    html = "<html><body>"
+    for url, attrs_changes in changes:
+        if url != url:
+            html += f"<p><strong>NEW URL!: {url}</strong></p>"
+        else:
+            html += f"<p><strong>Changes for item {url}:</strong></p>"
+        for attr, value in attrs_changes.items():
+            html += f"<p>{attr}: <span style='color:red;'>{value[0]}</span> -> <span style='color:green;'>{value[1]}</span></p>"
+    html += "</body></html>"
+    return html
+
+def print_changes_with_color(changes):
+    for url, attrs_changes in changes:
+        if url != url:
+            print(f"NEW URL!: {url}:")
+        else:
+            print(f"Changes for item {url}:")
         for attr, value in attrs_changes.items():
             print(f"\t{attr}: \033[91m{value[0]}\033[0m -> \033[92m{value[1]}\033[0m")
 
@@ -112,7 +148,8 @@ class MyBot:
             stuff.stuff_list.append(item)
         return stuff
 
-    def print_user_stuff_items(self, user_stuff_obj: UserStuff) -> None:
+    @staticmethod
+    def print_user_stuff_items(user_stuff_obj: UserStuff) -> None:
         for item in user_stuff_obj.stuff_list:
             print("---")
             print(item.url, item.title, item.price, item.description[0:20], sep='\n')
@@ -131,8 +168,9 @@ class MyBot:
         soup = BeautifulSoup(text, 'html.parser')
         element = soup.find(id='viewad-description-text')
         if element:
-            description = element.get_text(separator='\n')
-            description = re.sub('\n', '', description).strip()
+            description = element.get_text(separator='\n').strip()
+            #description = re.sub('\n', '', description).strip()
+
             return description
         return "No description found"
 
@@ -180,13 +218,19 @@ def check_for_changes():
 
         if saved_user_stuff != new_user_stuff:
             print(f"User stuff for {user} has changed, saving new user_stuff object.")
+            _changes = pprint.pformat(saved_user_stuff.find_changes(new_user_stuff))
+            #print(f'!!!Changes!!!: {_changes}')
             save_user_stuff_to_file(new_user_stuff, filename)
             print_changes_with_color(saved_user_stuff.find_changes(new_user_stuff))
             # Todo create email body in html format in other python file maybe
-            body = str(new_user_stuff.user_id) + '\n' + new_user_stuff.stuff_list[0].title + '\n'
 
+            body = '==========OLD:==========\n' + str(saved_user_stuff) + '==========NEW:==========\n' + str(
+                new_user_stuff)
+            body += f'==========CHANGES:==========\nChanges: {_changes}'
+            body = create_changes_html(saved_user_stuff.find_changes(new_user_stuff))
+            print(f"Sending email to {email_data.data.to_email}")
             send_email.send_email(
-                subject='changes detected for user' + str(user),
+                subject='KBot: changes detected for user ' + str(user),
                 body=body,
                 from_email="kbot@kbot.com",
                 to_email=email_data.data.to_email,
@@ -195,13 +239,14 @@ def check_for_changes():
         else:
             print("Nothing has changed, nothing to do!")
             # Todo create email body in html format in other python file maybe
-            body = str(new_user_stuff.user_id) + '<br>' + new_user_stuff.stuff_list[0].title + '<br>'
+            body = str(new_user_stuff)
+
             send_email.send_email(
-                subject='Nothing changed for user ' + str(user),
+                subject='KBot: nothing changed for user ' + str(user),
                 body=body,
                 from_email="kbot@kbot.com",
                 to_email=email_data.data.to_email,
-                connection_data=email_data.data)
+                connection_data=email_data.data.get_connection_data())
 
     else:
         print(f"No saved user stuff found, creating new user_stuff object for {user}")
@@ -226,7 +271,6 @@ def local_changes():
     print(f'user_stuff: user {user}; length: {len(user_stuff.stuff_list)}')
     print(f'user_stuff: title of item 0: {user_stuff.stuff_list[0].title}')
 
-
     user_stuff2 = copy.deepcopy(user_stuff)
     print(f'user_stuff2: user {user}; length: {len(user_stuff2.stuff_list)}')
     print(f'user_stuff2: title of item 0: {user_stuff2.stuff_list[0].title}')
@@ -240,6 +284,7 @@ def local_changes():
     pprint.pprint(user_stuff.find_changes(user_stuff2))
     print_changes_with_color(user_stuff.find_changes(user_stuff2))
 
+
 if __name__ == "__main__":
 
     if len(sys.argv) < 2:
@@ -247,6 +292,3 @@ if __name__ == "__main__":
         sys.exit(1)
 
     check_for_changes()
-
-# Todo expand testing with local html files to test with
-# Todo expand testing with local data, not only with mock data

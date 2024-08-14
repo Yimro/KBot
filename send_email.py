@@ -1,29 +1,8 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-
 from email_data import ConnectionData
 
-
-def send_email_(subject, body, to_email, from_email, smtp_server, smtp_port, smtp_user, smtp_password):
-    # Create message container
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = from_email
-    msg['To'] = to_email
-
-    # Create the body of the message (HTML version).
-    html = body
-    part2 = MIMEText(html, 'html')
-
-    # Attach parts into message container.
-    msg.attach(part2)
-
-    # Send the message via local SMTP server.
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-        server.sendmail(from_email, to_email, msg.as_string())
 
 def send_email(subject, body, to_email, from_email, connection_data: ConnectionData):
     # Create message container
@@ -34,7 +13,7 @@ def send_email(subject, body, to_email, from_email, connection_data: ConnectionD
 
     # Create the body of the message (HTML version).
     html = body
-    part2 = MIMEText(html, 'html')
+    part2 = MIMEText(html, 'plain')
 
     # Attach parts into message container.
     msg.attach(part2)
